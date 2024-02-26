@@ -14,7 +14,7 @@ import (
 
 type EdgeTTS struct {
 	communicator *Communicate
-	texts        []*CommunicateTextTask
+	tasks        []*CommunicateTextTask
 	outCome      io.WriteCloser
 }
 
@@ -37,12 +37,14 @@ func PrintVoices(locale string) {
 	// Print all available voices.
 	voices, err := listVoices()
 	if err != nil {
+		log.Fatalf("Failed to listVoices: %v\n", err)
 		return
 	}
 	sort.Slice(voices, func(i, j int) bool {
 		return voices[i].ShortName < voices[j].ShortName
 	})
 
+	// log.Printf("error: %+v \n", voices)
 	filterFieldName := map[string]bool{
 		"SuggestedCodec": true,
 		"FriendlyName":   true,
@@ -52,9 +54,18 @@ func PrintVoices(locale string) {
 	}
 
 	for _, voice := range voices {
-		if voice.Locale != locale {
-			continue
+		lenLocale := len(locale)
+		if lenLocale > 0 {
+			tempLocale := voice.Locale
+			if len(voice.Locale) > lenLocale {
+				tempLocale = voice.Locale[:lenLocale]
+			}
+
+			if tempLocale != locale {
+				continue
+			}
 		}
+
 		fmt.Printf("\n")
 		t := reflect.TypeOf(voice)
 		for i := 0; i < t.NumField(); i++ {
@@ -82,17 +93,19 @@ func NewTTS(args Args) *EdgeTTS {
 			return nil
 		}
 	}
-	tts := NewCommunicate().WithVoice(args.Voice).WithRate(args.Rate).WithVolume(args.Volume)
-	file, err := os.OpenFile(args.WriteMedia, os.O_APPEND|os.O_CREATE|os.O_TRUNC, 0644)
+
+	file, err := os.OpenFile(args.WriteMedia, os.O_APPEND|os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
 	if err != nil {
 		log.Fatalf("Failed to open file: %v\n", err)
 		return nil
 	}
+
+	tts := NewCommunicate().WithVoice(args.Voice).WithRate(args.Rate).WithVolume(args.Volume)
 	tts.openWs()
 	return &EdgeTTS{
 		communicator: tts,
 		outCome:      file,
-		texts:        []*CommunicateTextTask{},
+		tasks:        []*CommunicateTextTask{},
 	}
 }
 
@@ -108,17 +121,17 @@ func (eTTS *EdgeTTS) task(text string, voice string, rate string, volume string)
 }
 
 func (eTTS *EdgeTTS) AddTextDefault(text string) *EdgeTTS {
-	eTTS.texts = append(eTTS.texts, eTTS.task(text, "", "", ""))
+	eTTS.tasks = append(eTTS.tasks, eTTS.task(text, "", "", ""))
 	return eTTS
 }
 
 func (eTTS *EdgeTTS) AddTextWithVoice(text string, voice string) *EdgeTTS {
-	eTTS.texts = append(eTTS.texts, eTTS.task(text, voice, "", ""))
+	eTTS.tasks = append(eTTS.tasks, eTTS.task(text, voice, "", ""))
 	return eTTS
 }
 
 func (eTTS *EdgeTTS) AddText(text string, voice string, rate string, volume string) *EdgeTTS {
-	eTTS.texts = append(eTTS.texts, eTTS.task(text, voice, rate, volume))
+	eTTS.tasks = append(eTTS.tasks, eTTS.task(text, voice, rate, volume))
 	return eTTS
 }
 
@@ -126,9 +139,16 @@ func (eTTS *EdgeTTS) Speak() {
 	defer eTTS.communicator.close()
 	defer eTTS.outCome.Close()
 
-	go eTTS.communicator.allocateTask(eTTS.texts)
+	go eTTS.communicator.allocateTask(eTTS.tasks)
 	eTTS.communicator.createPool()
-	for _, text := range eTTS.texts {
-		eTTS.outCome.Write(text.speechData)
+	for _, task := range eTTS.tasks {
+		log.Printf("eTTS.tasks.id: %d \n", task.id)
+		n, err := eTTS.outCome.Write(task.speechData)
+		if err != nil {
+			log.Fatalf("outCome.Write.error: %v", err)
+			return
+		}
+
+		log.Printf("outCome.Write.bytes: %d \n", n)
 	}
 }

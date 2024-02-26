@@ -203,12 +203,15 @@ func (c *Communicate) stream(text *CommunicateTextTask) chan communicateChunk {
 			// 读取消息
 			messageType, data, err := conn.ReadMessage()
 			if err != nil {
-				log.Println(err)
+				log.Println("error: ", err)
 				return
 			}
 			switch messageType {
 			case websocket.TextMessage:
-				parameters, data, _ := getHeadersAndData(data)
+				parameters, data, err := getHeadersAndData(data)
+				if err != nil {
+					log.Println("error: ", err)
+				}
 				path := parameters["Path"]
 				if path == "turn.start" {
 					downloadAudio = true
@@ -263,8 +266,8 @@ func (c *Communicate) stream(text *CommunicateTextTask) chan communicateChunk {
 }
 
 func (c *Communicate) allocateTask(tasks []*CommunicateTextTask) {
-	for id, t := range tasks {
-		t.id = id
+	for index, t := range tasks {
+		t.id = index
 		c.tasks <- t
 	}
 	close(c.tasks)

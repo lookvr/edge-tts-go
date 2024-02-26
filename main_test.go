@@ -8,7 +8,7 @@ import (
 
 func Test_printVoices(t *testing.T) {
 	type args struct {
-		proxy string
+		locale string
 	}
 	tests := []struct {
 		name string
@@ -17,13 +17,13 @@ func Test_printVoices(t *testing.T) {
 		{
 			name: "test-1",
 			args: args{
-				proxy: "",
+				locale: "zh-",
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			edgeTTS.PrintVoices(tt.args.proxy)
+			edgeTTS.PrintVoices(tt.args.locale)
 		})
 	}
 }
