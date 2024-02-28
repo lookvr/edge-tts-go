@@ -6,8 +6,8 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/lookvr/edge-tts-go/edgeTTS"
 	"github.com/spf13/pflag"
-	"github.com/surfaceyu/edge-tts-go/edgeTTS"
 )
 
 func usage() {

@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/surfaceyu/edge-tts-go/edgeTTS"
+	"github.com/lookvr/edge-tts-go/edgeTTS"
 )
 
 func main() {

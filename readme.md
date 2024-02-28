@@ -6,7 +6,7 @@
 
 To install it, run the following command:
 
-    $ go install github.com/surfaceyu/edge-tts-go
+    $ go install github.com/lookvr/edge-tts-go
 
 ## Usage
 
@@ -58,7 +58,7 @@ It is possible to make minor changes to the generated speech.
 
 It is possible to use the `edge-tts-go` module directly from go. For a list of example applications:
 
-* https://github.com/surfaceyu/edge-tts-go/edgeTTS
+* https://github.com/lookvr/edge-tts-go/edgeTTS
 
 ## thanks
 
